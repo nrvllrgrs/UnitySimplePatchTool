@@ -42,12 +42,6 @@ namespace SimplePatchToolUnity
 		private string selfPatcherExecutable = "SelfPatcher.exe";
 
 		[SerializeField]
-		private bool m_checkConnectionOnAwake = true;
-
-		[SerializeField]
-		private bool m_mutexPlayUpdateButtons = false;
-
-		[SerializeField]
 		[Tooltip( "Should SimplePatchTool logs be logged to console" )]
 		private bool logToConsole = true;
 
@@ -118,17 +112,6 @@ namespace SimplePatchToolUnity
 		private bool isPatchingLauncher;
 
 		private void Awake()
-		{
-			patchButton.gameObject.SetActive(true);
-			playButton.gameObject.SetActive(true);
-
-			if (m_checkConnectionOnAwake)
-			{
-				CheckConnection();
-			}
-		}
-
-		public void CheckConnection()
 		{
 			launcherVersionInfoURL = launcherVersionInfoURL.Trim();
 			mainAppVersionInfoURL = mainAppVersionInfoURL.Trim();
@@ -230,8 +213,6 @@ namespace SimplePatchToolUnity
 			{
 				Process.Start( new ProcessStartInfo( mainApp.FullName ) { WorkingDirectory = mainApp.DirectoryName } );
 				Process.GetCurrentProcess().Kill();
-
-				Application.Quit();
 			}
 			else
 				Debug.LogWarning( "Main app executable does not exist!" );
@@ -307,12 +288,6 @@ namespace SimplePatchToolUnity
 
 				patchButton.interactable = false;
 				playButton.interactable = true;
-
-				if (m_mutexPlayUpdateButtons)
-				{
-					patchButton.gameObject.SetActive(false);
-					playButton.gameObject.SetActive(true);
-				}
 			}
 			else
 				Debug.LogWarning( "Operation could not be started; maybe it is already executing?" );
@@ -361,16 +336,6 @@ namespace SimplePatchToolUnity
 		private void PatchFinished()
 		{
 			playButton.interactable = true;
-
-			if (m_mutexPlayUpdateButtons)
-			{
-				playButton.gameObject.SetActive(true);
-
-				// Turn off update button
-				patchButton.interactable = false;
-				patchButton.gameObject.SetActive(false);		
-			}
-
 
 			if( patcher.Result == PatchResult.AlreadyUpToDate )
 			{
