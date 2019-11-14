@@ -42,6 +42,12 @@ namespace SimplePatchToolUnity
 		private string selfPatcherExecutable = "SelfPatcher.exe";
 
 		[SerializeField]
+		private bool m_checkConnectionOnAwake = true;
+
+		[SerializeField]
+		private bool m_mutexPlayUpdateButtons = false;
+
+		[SerializeField]
 		[Tooltip( "Should SimplePatchTool logs be logged to console" )]
 		private bool logToConsole = true;
 
@@ -113,6 +119,25 @@ namespace SimplePatchToolUnity
 
 		private void Awake()
 		{
+			//patchButton.gameObject.SetActive(true);
+			//playButton.gameObject.SetActive(true);
+
+			if (m_checkConnectionOnAwake)
+			{
+				CheckConnection();
+			}
+		}
+
+		private void Update()
+		{
+			if (m_mutexPlayUpdateButtons)
+			{
+				playButton.gameObject.SetActive(!patchButton.gameObject.activeInHierarchy);
+			}
+		}
+
+		public void CheckConnection()
+		{
 			launcherVersionInfoURL = launcherVersionInfoURL.Trim();
 			mainAppVersionInfoURL = mainAppVersionInfoURL.Trim();
 			patchNotesURL = patchNotesURL.Trim();
@@ -147,6 +172,11 @@ namespace SimplePatchToolUnity
 					Debug.Log( log );
 
 				patcherLogText.text = log;
+
+				if (m_mutexPlayUpdateButtons && log.Equals("...App is up-to-date..."))
+				{
+					patchButton.gameObject.SetActive(false);
+				}
 			};
 			patcherListener.OnProgressChanged += ( progress ) =>
 			{
@@ -213,6 +243,8 @@ namespace SimplePatchToolUnity
 			{
 				Process.Start( new ProcessStartInfo( mainApp.FullName ) { WorkingDirectory = mainApp.DirectoryName } );
 				Process.GetCurrentProcess().Kill();
+
+				Application.Quit();
 			}
 			else
 				Debug.LogWarning( "Main app executable does not exist!" );
@@ -318,8 +350,10 @@ namespace SimplePatchToolUnity
 			if( patcher.Result == PatchResult.AlreadyUpToDate )
 			{
 				// If launcher is already up-to-date, check if there is an update for the main app
-				if( isPatchingLauncher )
-					StartMainAppPatch( true );
+				if (isPatchingLauncher)
+				{
+					StartMainAppPatch(true);
+				}
 			}
 			else if( patcher.Result == PatchResult.Success )
 			{
@@ -336,6 +370,16 @@ namespace SimplePatchToolUnity
 		private void PatchFinished()
 		{
 			playButton.interactable = true;
+
+			if (m_mutexPlayUpdateButtons)
+			{
+				playButton.gameObject.SetActive(true);
+
+				// Turn off update button
+				patchButton.interactable = false;
+				patchButton.gameObject.SetActive(false);		
+			}
+
 
 			if( patcher.Result == PatchResult.AlreadyUpToDate )
 			{
@@ -381,6 +425,13 @@ namespace SimplePatchToolUnity
 				Debug.LogError( "Can't fetch patch notes: " + webRequest.error );
 #endif
 		}
+
+		//private void SetActive(Selectable selectable, bool isOn)
+		//{
+		//	selectable.interactable = isOn;
+		//	selectable.gameObject.SetActive(isOn);
+		//}
+
 #endif
 	}
 }
